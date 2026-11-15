@@ -2,14 +2,14 @@ POST_AI_CAPTURE {"id":"contracts-scope-control","inputs":{"formal/RegistrySnapsh
 TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
 Warning: Please run the Java VM which executes TLC with a throughput optimized garbage collector by passing the "-XX:+UseParallelGC" property.
 (Use the -nowarning option to disable this warning.)
-Running breadth-first search Model-Checking with fp 6 and seed 1 with 1 worker on 10 cores with 512MB heap and 64MB offheap memory [pid: 1366] (Mac OS X 27.2 aarch64, Homebrew 27.0.1.0.3 x86_64, MSBDiskFPSet, DiskStateQueue).
-Parsing file /private/tmp/post-ai-tlc-pg9xm_gz/ScenarioContracts.tla
-Parsing file /private/tmp/post-ai-tlc-pg9xm_gz/Vocabulary.tla
-Parsing file /private/tmp/post-ai-tlc-pg9xm_gz/RegistrySnapshot.tla
-Parsing file /private/tmp/post-ai-tlc-pg9xm_gz/jvm/TLC.tla
-Parsing file /private/tmp/post-ai-tlc-pg9xm_gz/jvm/Naturals.tla
-Parsing file /private/tmp/post-ai-tlc-pg9xm_gz/jvm/FiniteSets.tla
-Parsing file /private/tmp/post-ai-tlc-pg9xm_gz/jvm/Sequences.tla
+Running breadth-first search Model-Checking with fp 108 and seed 1 with 1 worker on 1 cores with 494MB heap and 64MB offheap memory [pid: 149467] (Linux 7.0.0-1013-oracle aarch64, Ubuntu 21.0.13.0.3 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /tmp/post-ai-tlc-eo5q5wdz/ScenarioContracts.tla
+Parsing file /tmp/post-ai-tlc-eo5q5wdz/Vocabulary.tla
+Parsing file /tmp/post-ai-tlc-eo5q5wdz/RegistrySnapshot.tla
+Parsing file /tmp/post-ai-tlc-eo5q5wdz/jvm/TLC.tla
+Parsing file /tmp/post-ai-tlc-eo5q5wdz/jvm/Naturals.tla
+Parsing file /tmp/post-ai-tlc-eo5q5wdz/jvm/FiniteSets.tla
+Parsing file /tmp/post-ai-tlc-eo5q5wdz/jvm/Sequences.tla
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -17,9 +17,9 @@ Semantic processing of module Vocabulary
 Semantic processing of module RegistrySnapshot
 Semantic processing of module TLC
 Semantic processing of module ScenarioContracts
-Starting... (2026-11-06 20:46:28)
+Starting... (2026-11-15 20:31:13)
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-11-06 20:46:28.
+Finished computing initial states: 1 distinct state generated at 2026-11-15 20:31:13.
 Error: Invariant ScopeSound is violated.
 Error: The behavior up to this point is:
 State 1: <Initial predicate>
@@ -38,4 +38,4 @@ State 2: <Import line 8, col 16 to line 11, col 60 of module ScenarioContracts>
 
 22 states generated, 12 distinct states found, 10 states left on queue.
 The depth of the complete state graph search is 2.
-Finished in 00s at (2026-11-06 20:46:28)
+Finished in 01s at (2026-11-15 20:31:14)
