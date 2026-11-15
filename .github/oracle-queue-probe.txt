@@ -1,0 +1,1 @@
+Owner migration qualification: exact fork head; application, models and producers unchanged.
