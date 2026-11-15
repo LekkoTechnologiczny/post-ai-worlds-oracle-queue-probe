@@ -139,6 +139,12 @@ class NativeTests(unittest.TestCase):
         p.write_text(p.read_text() + "\n")
         self.reject()
 
+    def test_changed_queue_helper_is_bound_to_actual_producer_receipt(self):
+        self.assertIn('tools/remote_models.py', self.manifest['producer_inputs'])
+        p = self.root / 'tools/remote_models.py'
+        p.write_text(p.read_text() + '\n')
+        self.reject()
+
     def test_registry_drift(self):
         p = self.root / "worlds/registry.json"
         p.write_text(p.read_text() + "\n")

@@ -5,7 +5,8 @@ on:
 permissions:
   contents: read
 jobs:
-  validate:
+  source:
+    name: Public source checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -15,21 +16,11 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.15'
-      - name: Check retained public source and evidence
+      - name: Check public structure and navigation
         run: |
           python3 tools/build_navigation.py
-          python3 tools/check.py
-          python3 -m unittest discover -s tests -v
+          python3 -c "import sys; sys.path.insert(0, 'tools'); import check; check.validate(check.ROOT, native=False); print('PASS: public structure; native and full test phases run on Oracle.')"
       - name: Rebuild canonical website introduction
         run: |
           python3 website/build.py
           git diff --exit-code -- website
-      - name: Obtain pinned public TLC artifact
-        run: |
-          curl --fail --location --proto '=https' --tlsv1.2 https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar --output /tmp/post-ai-tla2tools.jar
-          echo '936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88  /tmp/post-ai-tla2tools.jar' | sha256sum --check
-      - name: Execute fresh finite models and controls
-        run: |
-          java -version
-          python3 tools/run_models.py --jar /tmp/post-ai-tla2tools.jar
-          python3 tools/check.py

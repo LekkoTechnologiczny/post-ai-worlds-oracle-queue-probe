@@ -1,15 +1,18 @@
 {
   "schema_version": 1,
   "scope": "bounded_models_only",
-  "generated_utc": "2026-11-06T19:46:37.094032+00:00",
+  "generated_utc": "2026-11-15T20:31:33.153676+00:00",
   "registry_sha256": "d376c2aa0a7a7a91abbe424fe99799aab7483a55b42d156e59e65638a3d3e18b",
   "tool_sha256": "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88",
   "tool_url": "https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar",
-  "java_version": "openjdk version \"27.0.1.0.3\" 2026-10-24\nOpenJDK Runtime Environment Homebrew (build 27.0.1.0.3)\nOpenJDK 64-Bit Server VM Homebrew (build 27.0.1.0.3, mixed mode, sharing)",
+  "java_version": "openjdk version \"21.0.13.0.3\" 2026-10-24\nOpenJDK Runtime Environment (build 21.0.13.0.3+1-1-24.04.1-Ubuntu)\nOpenJDK 64-Bit Server VM (build 21.0.13.0.3+1-1-24.04.1-Ubuntu, mixed mode, sharing)",
+  "java_executable": "/usr/lib/jvm/java-21-openjdk-arm64/bin/java",
+  "java_sha256": "8b0b19593a7ce6f677dcd0d637b962c011671371c4b19dee33193b4d87523707",
   "producer_inputs": {
-    "tools/check.py": "5506af748dcb15383c98e0437d1cc92e3dc1202907d236130b3e60fe83be8563",
-    "tools/run_models.py": "e2955fefdbf61d493153b545a625f0badf11a755600ab47ce76bf9e8629d0921",
-    "tools/campaign.py": "d88121332d57daf82ef5afd24b9e827d3a817d8a027f501e5200e6c0f5e13e86"
+    "tools/check.py": "69ecfdd3d80aabb7ee03b5ae0c3602f5b32e7d76ba481897a1d655e02c512f9b",
+    "tools/run_models.py": "5117638b223b19e6a7d8505228e03e778c50bbf4216d1fe3f44adc6729504a00",
+    "tools/campaign.py": "d88121332d57daf82ef5afd24b9e827d3a817d8a027f501e5200e6c0f5e13e86",
+    "tools/remote_models.py": "1f5105b05438f7b4a9fed6282cc1ae02c24a8eaca55d9ec943de09a5ffd3ae40"
   },
   "runs": [
     {
@@ -30,7 +33,7 @@
         "formal/contracts-safe.cfg": "8283e08fdc7566bf6a9095fac17a574412cf425a7f52ef3ce1e6a102ead07d46"
       },
       "log_path": "formal/evidence/contracts-safe.log",
-      "log_sha256": "dc4baababd974cfc1253f98068fae1e7ff02524ee9de83c5d083a19ec093ba1c"
+      "log_sha256": "1e28da4e0e132e96d4b7d71d8da485e9609ac233af50baa39be07aae52fc29fe"
     },
     {
       "id": "contracts-scope-control",
@@ -50,7 +53,7 @@
         "formal/contracts-scope-control.cfg": "2ee5927a88bc0e23622fab8e69765bd03ff5141778fe2b4d82931467318949e0"
       },
       "log_path": "formal/evidence/contracts-scope-control.log",
-      "log_sha256": "b5069b54fbf1d29862450b4c8a815bc693d158bd2b6e8b54dd61e9d864b91db6"
+      "log_sha256": "814097f1a13851f88d41b7e378d8a57996db3ae9e3d5f8ab9e899ce1dc35c0ed"
     },
     {
       "id": "contracts-stale-control",
@@ -70,7 +73,7 @@
         "formal/contracts-stale-control.cfg": "2002f154e342129a51e23b9ec9ed6894aef7d84a09f6c5885f24c5a5f34c0a84"
       },
       "log_path": "formal/evidence/contracts-stale-control.log",
-      "log_sha256": "7ba2b7d96bbede53078cd91270b3fa6545238619151690e3781bc4a97e20343a"
+      "log_sha256": "ccd3945fb714ca4814ce969cc7083dbc2c74554b9b39bdd4480431a81cb23a18"
     },
     {
       "id": "contracts-import-witness",
@@ -90,7 +93,7 @@
         "formal/contracts-import-witness.cfg": "0f8cced73b79aebcb66ace3c4eae10191674ce82bd57b12c9201ee24514bf051"
       },
       "log_path": "formal/evidence/contracts-import-witness.log",
-      "log_sha256": "53e29e5c736eee19b8c085d8cfe83512228a27c6c1e6085a39ee6fe057a4a647"
+      "log_sha256": "bd5f4fcda2a4f337f1fc0ba5257986bab683225908e3fba126c304b4686c3490"
     },
     {
       "id": "contracts-refresh-witness",
@@ -110,7 +113,7 @@
         "formal/contracts-refresh-witness.cfg": "1187fb36d251722b72633419c9575285b028d3c1e47110bd603a7bfff056062c"
       },
       "log_path": "formal/evidence/contracts-refresh-witness.log",
-      "log_sha256": "d332da103f58ac92ef634a6aa3b845246ddf7ffdeb5441de269b3fd9e2076b31"
+      "log_sha256": "ef669cdacfbaff4b1cbec6175d7647a577feb1930e501d3511be8b6b46574d97"
     },
     {
       "id": "operations-safe",
@@ -131,7 +134,7 @@
         "formal/operations-safe.cfg": "50b52e53a4528195a5ffb5a3743cbfe91775e9940b24dc9ab23e6f621a33efda"
       },
       "log_path": "formal/evidence/operations-safe.log",
-      "log_sha256": "9875e833f2744a5f9284be92e6b0585c4935418ee1970d87ab51794adc9e18b9"
+      "log_sha256": "e8e8b7215e8286fd1a6b16829f4e29d5c10126de0ba091537c107e1a55c4659c"
     },
     {
       "id": "operations-phase-control",
@@ -152,7 +155,7 @@
         "formal/operations-phase-control.cfg": "1f60f305e518d3d93736f5c1a6982b76972c14654eea938e038198059caabaad"
       },
       "log_path": "formal/evidence/operations-phase-control.log",
-      "log_sha256": "9f303d79c6322c8d9859ab5ec2de96b9bc5f0855cc608e298d6729ee6543d3e3"
+      "log_sha256": "470faff9004ae0fd6dfa05c484c513601d678469678f1e0bbad7884a6a957593"
     },
     {
       "id": "operations-mandate-control",
@@ -173,7 +176,7 @@
         "formal/operations-mandate-control.cfg": "778efda11b60b8e5246fa04cd562bf78e7ba28f7f31bf90730b9f2c27d8b6afb"
       },
       "log_path": "formal/evidence/operations-mandate-control.log",
-      "log_sha256": "7f87673a499f767611f40c63d18bcade7c4a5fbc7aedc862703c424d68fca00b"
+      "log_sha256": "388e2c506b5ae8d3de7115298cc3bad57e995bfc58460d29a3321e4142b8432f"
     },
     {
       "id": "operations-exit-control",
@@ -194,7 +197,7 @@
         "formal/operations-exit-control.cfg": "3a6710c2411903a9cf2783fda47a2774c7a52e66eb2453fdb7672e1b034ebcce"
       },
       "log_path": "formal/evidence/operations-exit-control.log",
-      "log_sha256": "b19167d7ba0dbec43a37e19f09c10a4d6e5b6f3750250a1e93b37a09584e0de3"
+      "log_sha256": "fec73319cb3707b9a3d927168a4a2d50c0584be2b639bef87f62728e111db8a9"
     },
     {
       "id": "operations-delivery-witness",
@@ -215,7 +218,7 @@
         "formal/operations-delivery-witness.cfg": "c8ff44c54b2267231427239b4d9f98e34ce1b5207ad22ec4cdf8336aaf1d750c"
       },
       "log_path": "formal/evidence/operations-delivery-witness.log",
-      "log_sha256": "14eb027ce6c84e28f823c215152a8fd3e2702322bd9d733e96973129c0d5c528"
+      "log_sha256": "e044fb47fcd710e0d5c160d7403e81f15f63e147cbe3ebafe2046bc3f0c1d462"
     },
     {
       "id": "operations-progress",
@@ -236,7 +239,7 @@
         "formal/operations-progress.cfg": "6210e33ff49083510e17a3201a986262438e2345fe46ed5beae7553880d11f0b"
       },
       "log_path": "formal/evidence/operations-progress.log",
-      "log_sha256": "5fc108d80f6358eedfa566ab4983568119159eaa2b153beae2d4b0ed8629a283"
+      "log_sha256": "72ac778e8c4d2e441f00efaa3a873fe4c0e1370ff73f414299f4f9fb87f558b6"
     },
     {
       "id": "operations-lost-witness-control",
@@ -257,7 +260,7 @@
         "formal/operations-lost-witness-control.cfg": "c9d6c0f6355667ddaf8ad1053f1143aaf68b8f70d3070186088dc679b7c4bdd9"
       },
       "log_path": "formal/evidence/operations-lost-witness-control.log",
-      "log_sha256": "87dbfec0b21226cde5ee8766af6fb440e8c59a006151f19aef3ba757d87e5c30"
+      "log_sha256": "accfbe46f61a342cef3bdef96bf2a3ca4aad70921496443d75d9b0db25a9f108"
     }
   ]
 }

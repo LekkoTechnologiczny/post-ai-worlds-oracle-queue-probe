@@ -21,8 +21,9 @@ class OracleGuardTests(unittest.TestCase):
             "GITHUB_SERVER_URL": "https://github.com",
             "GITHUB_REPOSITORY": guard.REPOSITORY,
             "GITHUB_REF": "refs/heads/main",
-            "GITHUB_WORKFLOW_REF": guard.WORKFLOW,
-            "GITHUB_EVENT_NAME": "push",
+            "GITHUB_WORKFLOW_REF": guard.WORKFLOWS["workflow_dispatch"],
+            "GITHUB_WORKFLOW_SHA": "a" * 40,
+            "GITHUB_EVENT_NAME": "workflow_dispatch",
         }
         self.event = {
             "repository": {
@@ -34,8 +35,10 @@ class OracleGuardTests(unittest.TestCase):
             "deleted": False,
         }
 
-    def test_main_push(self):
-        self.assertTrue(guard.admit(self.env, self.event))
+    def test_direct_main_push_is_retired(self):
+        # Push subjects enter through the maintained-main workflow_run dispatcher.
+        self.env["GITHUB_EVENT_NAME"] = "push"
+        self.assertFalse(guard.admit(self.env, self.event))
 
     def test_main_dispatch(self):
         self.env["GITHUB_EVENT_NAME"] = "workflow_dispatch"
@@ -100,7 +103,7 @@ class OracleGuardTests(unittest.TestCase):
         self.env["GITHUB_REF"] = "refs/tags/main"
         self.assertFalse(guard.admit(self.env, self.event))
 
-    def test_workflow_run(self):
+    def test_workflow_run_cannot_use_manual_workflow(self):
         self.env["GITHUB_EVENT_NAME"] = "workflow_run"
         self.assertFalse(guard.admit(self.env, self.event))
 

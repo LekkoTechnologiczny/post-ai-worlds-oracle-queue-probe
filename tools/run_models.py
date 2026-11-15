@@ -13,13 +13,21 @@ import check
 from campaign import DEPENDENCIES, RUNS
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jar", required=True, type=Path)
     parser.add_argument("--java", default="java")
     parser.add_argument("--root", default=check.ROOT, type=Path)
-    args = parser.parse_args()
+    parser.add_argument("--no-fetch", action="store_true", help="Retain native evidence only on Oracle; do not replace local evidence")
+    args = parser.parse_args(argv)
     root = args.root.resolve()
+    import remote_models
+    try:
+        native = remote_models.is_worker()
+    except (OSError, RuntimeError) as exc:
+        parser.error(str(exc))
+    if not native:
+        return remote_models.run(args, root, RUNS, DEPENDENCIES)
     jar = args.jar.resolve()
     java = shutil.which(args.java)
     check.require(java is not None, "java", "Java executable required")
@@ -124,9 +132,11 @@ def main():
         "tool_sha256": check.TLC_SHA256,
         "tool_url": check.TLC_URL,
         "java_version": (version.stdout + version.stderr).strip(),
+        "java_executable": str(Path(java).resolve()),
+        "java_sha256": check.digest(Path(java).resolve()),
         "producer_inputs": {
             n: check.digest(root / n)
-            for n in ("tools/check.py", "tools/run_models.py", "tools/campaign.py")
+            for n in ("tools/check.py", "tools/run_models.py", "tools/campaign.py", "tools/remote_models.py")
         },
         "runs": rows,
     }

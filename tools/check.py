@@ -459,7 +459,7 @@ def verify_evidence(root):
         require(digest(confined(root, path)) == sha, "producer_drift", path)
     require(
         set(manifest["producer_inputs"])
-        == {"tools/check.py", "tools/run_models.py", "tools/campaign.py"},
+        == {"tools/check.py", "tools/run_models.py", "tools/campaign.py", "tools/remote_models.py"},
         "producer_set",
         "expected producer sources",
     )
