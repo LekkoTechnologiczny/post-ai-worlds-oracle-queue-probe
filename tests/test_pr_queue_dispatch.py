@@ -52,7 +52,7 @@ class EventTests(unittest.TestCase):
         for key,value in [('GITHUB_REF','refs/heads/other'),('GITHUB_EVENT_NAME','pull_request_target'),('GITHUB_WORKFLOW_REF','other'),('GITHUB_REPOSITORY','foreign/repo')]:
             changed=dict(env);changed[key]=value
             with self.subTest(key=key),self.assertRaises(d.Refused):d.validate_event(event,changed)
-        for key,value in [('id',True),('event','push'),('status','requested'),('head_sha','../escape'),('name','attacker workflow')]:
+        for key,value in [('id',True),('event','workflow_dispatch'),('status','requested'),('head_sha','../escape'),('name','attacker workflow')]:
             changed=copy.deepcopy(event);changed['workflow_run'][key]=value
             with self.subTest(key=key),self.assertRaises(d.Refused):d.validate_event(changed,env)
 
@@ -69,6 +69,84 @@ class EventTests(unittest.TestCase):
         api=FakeAPI();self.assertEqual(1,d.current_prs(api,api.run)[0]['number'])
         with mock.patch.object(api,'call',return_value=[dict(pr(),head={'sha':'c'*40})]):
             with self.assertRaises(d.Refused):d.current_prs(api,api.run)
+
+
+class PushAndManualTests(unittest.TestCase):
+    def test_all_push_heads_include_main_feature_tag_and_detached_source(self):
+        for branch in ('main','feature/source','v1.0',None):
+            event,env=context();event['workflow_run'].update(event='push',head_branch=branch)
+            api=FakeAPI();api.run=copy.deepcopy(event['workflow_run'])
+            self.assertEqual('push',d.validate_event(event,env)['event'])
+            self.assertEqual(('push',HEAD),d.current_target(api,api.run))
+            # No current-branch lookup: moved/deleted branch cannot erase the
+            # original immutable push's coverage, and check SHA stays exact.
+            d.recheck_target(api,api.run,('push',HEAD))
+
+    def test_manual_main_has_explicit_authority_without_fake_upstream_success(self):
+        _,env=context();env.update(GITHUB_EVENT_NAME='workflow_dispatch',GITHUB_WORKFLOW_REF=d.REPOSITORY+'/.github/workflows/oracle-tla.yml@refs/heads/main',GITHUB_RUN_ID='99',GITHUB_SHA=HEAD)
+        api=FakeAPI();api.run.update(event='workflow_dispatch',head_branch='main')
+        real=api.call
+        def call(path,*args,**kwargs):
+            if path.endswith('/actions/workflows/100'):return {'path':'.github/workflows/oracle-tla.yml'}
+            return real(path,*args,**kwargs)
+        def snapshot(fake,head,root):root.mkdir();return {'tracked_files':['README.md']}
+        with mock.patch.object(api,'call',side_effect=call),mock.patch.object(d.shutil,'which',return_value='/client'),mock.patch.object(d,'snapshot',side_effect=snapshot),mock.patch.object(d,'execute_phases',return_value={'native_job':'a'*32,'tests_job':'b'*32}) as phases:
+            self.assertEqual(0,d.dispatch_manual(api,env))
+        self.assertEqual('manual',phases.call_args.args[4])
+        self.assertIn('No upstream success is assumed',api.writes[0][2]['output']['summary'])
+        self.assertEqual('success',api.writes[-1][2]['conclusion'])
+        wrong=dict(env);wrong['GITHUB_REF']='refs/heads/feature'
+        with self.assertRaises(d.Refused):d.dispatch_manual(api,wrong)
+
+
+class QueueEnvelopeTests(unittest.TestCase):
+    def test_minimal_real_submit_envelope_and_status_binding(self):
+        job='a'*32;key='test-key'
+        row={'id':job,'project':d.REPOSITORY,'request_key':key,'status':'completed','native_exit':0}
+        replies=[subprocess.CompletedProcess([],0,stdout=json.dumps({'job':job,'request_key':key,'status':'queued'})),subprocess.CompletedProcess([],0),subprocess.CompletedProcess([],0,stdout=json.dumps(row))]
+        with mock.patch.object(d.subprocess,'run',side_effect=replies) as launch:
+            self.assertEqual(job,d.queue_job('/client',Path('/source'),['true'],['out'],key,Path('/fetch'))['id'])
+        self.assertEqual(['submit','wait','status'],[x.args[0][1] for x in launch.call_args_list])
+
+    def test_status_wrong_job_project_key_bool_exit_or_nonzero_wait_refused(self):
+        job='a'*32;key='test-key'
+        for field,value,wait in [('id','b'*32,0),('project','foreign/repo',0),('request_key','other',0),('native_exit',False,0),('native_exit',1,0),('status','interrupted',0),('native_exit',0,75)]:
+            row={'id':job,'project':d.REPOSITORY,'request_key':key,'status':'completed','native_exit':0};row[field]=value
+            replies=[subprocess.CompletedProcess([],0,stdout=json.dumps({'job':job,'request_key':key})),subprocess.CompletedProcess([],wait),subprocess.CompletedProcess([],0,stdout=json.dumps(row))]
+            with self.subTest(field=field,value=value,wait=wait),mock.patch.object(d.subprocess,'run',side_effect=replies),self.assertRaises(d.Refused):
+                d.queue_job('/client',Path('/source'),['true'],['out'],key,Path('/fetch'))
+
+class BootstrapProcessTests(unittest.TestCase):
+    def fixture(self,root,fail=False):
+        files={
+            'README.md':'# Fixture\n',
+            'tools/check.py':('import pathlib,sys;pathlib.Path(".oracle-result.json").write_text(\'{"complete":true}\');sys.exit(1)' if fail else 'print("ordinary fixture passed")'),
+            'tools/build_navigation.py':'import subprocess;assert "README.md" in subprocess.check_output(["git","ls-files"],text=True)',
+            'tests/test_fixture.py':'import unittest\nclass Fixture(unittest.TestCase):\n def test_required(self):self.assertTrue(True)\n',
+            'website/build.py':'print("website fixture unchanged")'}
+        for name,text in files.items():
+            p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
+        d.write_source_receipt(root,HEAD,99,'fixture',list(files))
+
+    def test_fixed_isolated_driver_runs_all_non_native_phases_without_fake_head(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);self.fixture(root)
+            result=subprocess.run([sys.executable,'-I','-B','-c',d.BOOTSTRAP],cwd=root,text=True,capture_output=True)
+            self.assertEqual(0,result.returncode,result.stdout+result.stderr)
+            report=json.loads((root/d.RESULT_RECEIPT).read_text())
+            self.assertIs(True,report['complete']);self.assertEqual(d.PHASES,[x['name'] for x in report['phases']])
+            self.assertNotIn('native',[x['name'] for x in report['phases']])
+            head=subprocess.run(['git','rev-parse','--verify','HEAD'],cwd=root,capture_output=True)
+            self.assertNotEqual(0,head.returncode)
+
+    def test_failed_candidate_phase_cannot_replace_driver_exit_with_fake_report(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);self.fixture(root,fail=True)
+            result=subprocess.run([sys.executable,'-I','-B','-c',d.BOOTSTRAP],cwd=root,text=True,capture_output=True)
+            self.assertEqual(1,result.returncode)
+            report=json.loads((root/d.RESULT_RECEIPT).read_text())
+            self.assertIs(False,report['complete'])
+            self.assertEqual(['git_index','ordinary'],[x['name'] for x in report['phases']])
 
 
 class SnapshotTests(unittest.TestCase):
@@ -91,7 +169,7 @@ class SnapshotTests(unittest.TestCase):
         tree,blobs,api=self.fixture()
         with tempfile.TemporaryDirectory() as temp,mock.patch.object(d.subprocess,'run',side_effect=AssertionError('no candidate exec')):
             target=Path(temp)/'snapshot';selected=d.snapshot(api,HEAD,target)
-            self.assertEqual({x['path'] for x in tree['tree']},set(selected))
+            self.assertEqual({x['path'] for x in tree['tree']},set(selected['files']))
             self.assertEqual(b'source fixture',(target/'tools/check.py').read_bytes())
             self.assertFalse((target/'.git').exists())
 
@@ -112,41 +190,87 @@ class SnapshotTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp,self.assertRaises(d.Refused):d.snapshot(api,HEAD,Path(temp)/'snapshot')
 
     def test_old_evidence_is_not_submitted_as_fresh(self):
-        tree,blobs,api=self.fixture();tree['tree'].append({'path':'formal/evidence/fake.log','type':'blob','mode':'120000'})
+        tree,blobs,api=self.fixture();tree['tree'].append({'path':'formal/evidence/fake.log','type':'blob','mode':'100644','size':3,'sha':'c'*40})
         with tempfile.TemporaryDirectory() as temp:
             target=Path(temp)/'snapshot';d.snapshot(api,HEAD,target)
             self.assertFalse((target/'formal/evidence').exists())
 
 
 class TrustedVerifierTests(unittest.TestCase):
-    def test_candidate_python_is_data_only_for_trusted_verification(self):
-        # Synthetic security control in disposable files, not a new proof receipt:
-        # deliberately hostile candidate Python must never be imported on host.
+    def candidate(self,root):
+        for folder in ('tools','formal','worlds'):
+            shutil.copytree(ROOT/folder,root/folder,ignore=shutil.ignore_patterns('__pycache__'))
+
+    def test_hostile_candidate_producer_refused_before_native_authority(self):
         import shutil
-        checker, campaign, adapter = d.trusted_modules()
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);source=root/'source';source.mkdir()
             for folder in ('tools','formal','worlds'):
                 shutil.copytree(ROOT/folder,source/folder,ignore=shutil.ignore_patterns('__pycache__'))
-            fetched=root/'fetched';(fetched/'formal').mkdir(parents=True)
-            shutil.copytree(ROOT/'formal/evidence',fetched/'formal/evidence')
-            shutil.copyfile(ROOT/'formal/RegistrySnapshot.tla',fetched/'formal/RegistrySnapshot.tla')
-            candidate=source/'tools/check.py';candidate.write_text('raise AssertionError("candidate code executed on host")')
-            manifest=checker.load(fetched/'formal/evidence/manifest.json')
-            manifest['producer_inputs']['tools/check.py']=checker.digest(candidate)
-            java=Path('/usr/bin/java').resolve()
-            manifest['java_executable']=str(java);manifest['java_sha256']=checker.digest(java)
-            (fetched/'formal/evidence/manifest.json').write_text(json.dumps(manifest))
-            self.assertEqual(12,d.verify_returned(source,fetched))
-            self.assertEqual(ROOT/'tools/check.py',Path(checker.__file__))
+            (source/'tools/check.py').write_text('raise AssertionError("hostile candidate")')
+            with self.assertRaisesRegex(d.Refused,'unsupported producer'):
+                d.prepare_native(source,root/'native')
+            self.assertFalse((root/'native').exists())
+
+    def test_native_payload_contains_only_trusted_code_and_candidate_data(self):
+        import shutil
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);source=root/'source';source.mkdir()
+            for folder in ('tools','formal','worlds'):
+                shutil.copytree(ROOT/folder,source/folder,ignore=shutil.ignore_patterns('__pycache__'))
+            (source/'tools/malicious.py').write_text('raise AssertionError("not native input")')
+            subject=d.prepare_native(source,root/'native')
+            self.assertEqual((ROOT/'tools/check.py').read_bytes(),(root/'native/producer/tools/check.py').read_bytes())
+            self.assertEqual((ROOT/'tools/check.py').read_bytes(),(subject/'tools/check.py').read_bytes())
+            self.assertFalse((root/'native/producer/tools/malicious.py').exists())
+            self.assertFalse((subject/'tools/malicious.py').exists())
+            self.assertFalse((subject/'formal/evidence').exists())
+
+    def test_candidate_test_artifacts_never_replace_separate_native_authority(self):
+        import shutil
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);source=root/'source';source.mkdir()
+            for folder in ('tools','formal','worlds'):
+                shutil.copytree(ROOT/folder,source/folder,ignore=shutil.ignore_patterns('__pycache__'))
+            calls=[];authority={}
+            def queue(client,payload,command,outputs,key,fetch,timeout=1800):
+                calls.append((command,outputs))
+                if len(calls)==1:
+                    (fetch/'subject/formal').mkdir(parents=True)
+                    shutil.copytree(ROOT/'formal/evidence',fetch/'subject/formal/evidence')
+                    shutil.copyfile(ROOT/'formal/RegistrySnapshot.tla',fetch/'subject/formal/RegistrySnapshot.tla')
+                    authority['manifest']=fetch/'subject/formal/evidence/manifest.json'
+                    authority['bytes']=authority['manifest'].read_bytes()
+                    return {'id':'a'*32}
+                # Simulate hostile B rewriting its copied proof/report. A is in
+                # another terminal queue job and not declared as a B output.
+                (payload/'formal/evidence/manifest.json').write_text('fake native success')
+                fetch.mkdir();(fetch/d.RESULT_RECEIPT).write_text('{"native_cases":999,"complete":true}')
+                self.assertEqual([d.RESULT_RECEIPT],outputs)
+                return {'id':'b'*32,'native_cases':999}
+            tracked=['tools/check.py','formal/RegistrySnapshot.tla','formal/evidence/manifest.json']
+            with mock.patch.object(d,'queue_job',side_effect=queue),mock.patch.object(d,'verify_returned',return_value=12) as verifier:
+                result=d.execute_phases('/client',source,HEAD,99,'workflow_run:pull_request',tracked,root)
+            self.assertEqual(12,result['native_cases']);self.assertEqual('a'*32,result['native_job'])
+            self.assertEqual(authority['bytes'],authority['manifest'].read_bytes())
+            self.assertEqual(1,verifier.call_count)
+            self.assertEqual(['/usr/bin/python3','-I','-B','-c'],calls[1][0][:4])
+            self.assertNotIn("phase('native'",d.BOOTSTRAP)
+            self.assertIn("'--pathspec-file-nul'",d.BOOTSTRAP)
+            self.assertNotIn("git commit",d.BOOTSTRAP)
+
 
 class VerdictTests(unittest.TestCase):
     def exercise(self,api,native_exit=0,verify=12):
         event,env=context()
-        def snapshot(fake_api,head,root):root.mkdir()
-        with mock.patch.object(d,'snapshot',side_effect=snapshot),mock.patch.object(d.shutil,'which',return_value='/installed/tla-queue'),mock.patch.object(d.subprocess,'run',return_value=subprocess.CompletedProcess([],native_exit)) as launch,mock.patch.object(d,'verify_returned',return_value=verify) as verifier:
+        def snapshot(fake_api,head,root):root.mkdir();return {'tracked_files':['README.md']}
+        def execute(*args):
+            if native_exit:raise d.Refused('Oracle command failed')
+            if verify!=12:raise d.Refused('trusted native captures did not qualify')
+            return {'native_job':'a'*32,'tests_job':'b'*32,'native_cases':12}
+        with mock.patch.object(d,'snapshot',side_effect=snapshot),mock.patch.object(d.shutil,'which',return_value='/installed/tla-queue'),mock.patch.object(d,'execute_phases',side_effect=execute) as phases:
             result=d.dispatch(api,event,env)
-        return result,launch,verifier
+        return result,phases,phases
 
     def test_combined_success_requires_upstream_native_and_trusted_artifacts(self):
         api=FakeAPI();result,launch,verifier=self.exercise(api)
@@ -154,10 +278,7 @@ class VerdictTests(unittest.TestCase):
         created=api.writes[0][2];completed=api.writes[-1][2]
         self.assertEqual('validate',created['name']);self.assertEqual(HEAD,created['head_sha'])
         self.assertEqual('success',completed['conclusion'])
-        command=launch.call_args.args[0]
-        self.assertEqual('/installed/tla-queue',command[0]);self.assertNotIn('--env',command)
-        self.assertIn('formal/evidence',command);self.assertIn('formal/RegistrySnapshot.tla',command)
-        self.assertEqual(d.TRUSTED_ROOT,launch.call_args.kwargs['cwd'])
+        self.assertEqual('/installed/tla-queue',launch.call_args.args[0])
 
     def test_unsuccessful_hosted_check_never_submits_native_job(self):
         event,env=context();event['workflow_run']['conclusion']='failure';api=FakeAPI();api.run['conclusion']='failure'
@@ -184,7 +305,14 @@ class VerdictTests(unittest.TestCase):
 
     def test_native_nonzero_never_reaches_artifact_success(self):
         api=FakeAPI();result,launch,verifier=self.exercise(api,native_exit=75)
-        self.assertEqual(1,result);verifier.assert_not_called();self.assertEqual('failure',api.writes[-1][2]['conclusion'])
+        self.assertEqual(1,result);self.assertEqual('failure',api.writes[-1][2]['conclusion'])
+
+    def test_candidate_test_job_failure_cannot_publish_success(self):
+        event,env=context();api=FakeAPI()
+        def snapshot(fake,head,root):root.mkdir();return {'tracked_files':['README.md']}
+        with mock.patch.object(d,'snapshot',side_effect=snapshot),mock.patch.object(d.shutil,'which',return_value='/client'),mock.patch.object(d,'execute_phases',side_effect=d.Refused('B trusted driver exit1; fake success report ignored')):
+            self.assertEqual(1,d.dispatch(api,event,env))
+        self.assertEqual('failure',api.writes[-1][2]['conclusion'])
 
     def test_stale_head_after_native_success_is_not_credited(self):
         api=FakeAPI();api.pull['head']['sha']='c'*40
