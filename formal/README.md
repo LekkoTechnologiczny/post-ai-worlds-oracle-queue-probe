@@ -22,18 +22,48 @@ Inspect [campaign.py](../tools/campaign.py), configurations, captured [evidence]
 
 ## Reproduce
 
-Use Python 3.11+ and Java 11+. Obtain `tla2tools.jar` from the [official v1.7.4 release](https://github.com/tlaplus/tlaplus/releases/tag/v1.7.4). The exact artifact SHA-256 is `936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88`; a filename or release tag alone is insufficient.
+Use Python3.11+ and the installed shared `tla-queue` client. The JDK and pinned
+TLC1.7.4 run on Oracle; local authors do not download or execute TLC.
 
 ```sh
-python3 tools/run_models.py --jar /path/to/tla2tools.jar
+python3 tools/run_models.py --java /usr/bin/java --jar /opt/tla/tla2tools-1.7.4.jar
 python3 tools/check.py
 python3 -m unittest discover -s tests -v
 ```
 
-Run in a workspace whose native output contains no personal filesystem identities. The runner stores fresh output captures and refuses personal home paths; it does not redact logs and retain old hashes. The offline check needs only the repository, not Java, network access, the producer's installation path, private Git objects or credentials. CI executes the native campaign afresh.
+`--jar` and `--java` are Oracle-side paths. The client snapshots the producer,
+declared models/configurations and registry, submits an immutable campaign and
+waits for its actual result. No client/backend means explicit failure, never
+local TLC fallback. Native execution requires the Linux queue worker identity
+and matching job cgroup. The worker verifies JAR SHA-256
+`936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88`.
+
+Every campaign retains raw logs, source/tool bindings and its manifest on Oracle.
+By default, exactly twelve logs, the manifest and generated RegistrySnapshot are
+safely fetched into the selected `--root` (the repository by default), preserving
+unrelated files and rejecting links/path escapes. `--no-fetch` keeps evidence
+only on Oracle. Failed partial campaigns cannot overwrite a complete local
+campaign or qualify as success. Historical evidence stays in Git history; do
+not relabel prior logs with changed source hashes.
+
+Native output must contain no personal filesystem identities; it is not redacted
+after hashing. The ordinary retained-evidence checker remains offline and needs
+no Java, account or producer installation. Changing any of the four producer
+sources, including `remote_models.py`, invalidates old source-bound evidence and
+requires a real new campaign. Models, bounds, flags and semantic controls remain
+unchanged by this transport.
 
 [Shared worlds](../worlds/README.md) · [Contribution guidance](../CONTRIBUTING.md)
 
 ## Oracle execution
 
-Maintained-main checks also run on the existing shared Oracle host through a separate repository registration and isolated service account. Public PR checks stay GitHub-hosted. See [runner operation and admission boundary](../docs/oracle-runner.md). Prediction proposals may include formal work, but its absence is nonblocking; the [forecasting standard](../docs/forecasting-guide.md) governs their empirical reasoning.
+All push heads (main, feature branches and tags), pull requests and explicit
+manual main verification use the shared Oracle queue. Hosted checks perform
+structural/navigation/site work. A trusted default-main dispatcher then runs
+native production and the complete unchanged candidate test suite in separate
+sandboxed jobs before publishing the combined exact-head `validate` result.
+Fork approval is preserved: no PR job is submitted until its approved hosted
+source workflow completes. See [runner operation and authority boundary](../docs/oracle-runner.md).
+
+Prediction proposals may include formal work, but its absence is nonblocking;
+the [forecasting standard](../docs/forecasting-guide.md) governs empirical reasoning.

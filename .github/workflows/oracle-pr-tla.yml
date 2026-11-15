@@ -1,0 +1,25 @@
+name: Oracle source verification
+on:
+  workflow_run:
+    workflows: [Public research checks]
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: read
+jobs:
+  oracle:
+    if: github.repository == 'sloik/post-ai-worlds' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'pull_request')
+    runs-on: [self-hosted, Linux, ARM64, oracle, post-ai-worlds]
+    timeout-minutes: 120
+    steps:
+      - name: Checkout only the trusted default-branch workflow revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Queue trusted native production and isolated candidate tests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I -B ci/queue_pr_models.py

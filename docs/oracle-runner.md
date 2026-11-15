@@ -4,13 +4,79 @@ We reuse the existing Oracle ARM64 machine also used for Petcare, with **a separ
 
 ## Which jobs run where
 
-[Public PR checks](../.github/workflows/checks.yml) remain GitHub-hosted. [Oracle TLA verification](../.github/workflows/oracle-tla.yml) runs only on maintained `main` pushes or an authorised manual dispatch of `main`. It validates the retained public inventory/evidence, regression suite, exact pinned TLC JAR and fresh 12-case finite campaign. Missing formal attachments on prediction issues never prevent submission or acceptance; this job verifies the models already in the repository.
+[Public research checks](../.github/workflows/checks.yml) runs structural,
+navigation and site checks on GitHub-hosted machines for every original push and
+pull-request event. Its job is named **Public source checks**, so it cannot give
+a premature green result under the former combined `validate` context.
 
-Both workflows use read-only contents permissions and disable persisted checkout credentials. The Oracle registration has repository-specific `post-ai-worlds` and `oracle` labels. The host provides Python 3.12, Java 21 and the pinned `/opt/tla/tla2tools-1.7.4.jar`; the normal offline validator still needs none of those private installation paths.
+[Oracle source verification](../.github/workflows/oracle-pr-tla.yml) is a trusted
+default-main `workflow_run` dispatcher. It verifies the completed source run,
+workflow path, repository and exact head through GitHub's API. Failed/cancelled
+hosted work produces non-success `validate` without queue submission. Approved
+successful PR work and every push head proceed to Oracle; a moved/deleted push
+branch does not erase its original exact-commit check. PR heads must remain open
+and current before and after execution. Existing external fork approval remains
+in force; `pull_request_target` is not used.
+
+The persistent runner checks out only `github.workflow_sha` from the trusted
+default-branch workflow. It downloads bounded, hash-verified regular Git blobs as
+data, rejects links/submodules/path escapes, and never imports or executes
+candidate Python on that runner. The GitHub token is used only by the trusted
+control plane for source/API lookup and exact-head check publication; it is not
+forwarded to submitted jobs.
+
+Two separate queue jobs preserve authority:
+
+1. **Native authority A:** maintained-main producer/classifier code executes
+   against candidate model/configuration/registry data. All four candidate
+   producer blobs must match the reviewed maintained baseline; a producer/schema
+   change fails explicitly and requires a reviewed baseline update. Candidate
+   Python is never the authority for fresh native captures. After A stops, its
+   root-owned immutable raw captures are checked by the trusted ordinary verifier
+   against candidate inputs, actual tool identity and all twelve required cases.
+2. **Candidate tests B:** a trusted `python -I` bootstrap receives the full regular
+   candidate snapshot plus A's derived evidence. It creates a safe local Git
+   index from the authoritative filename list, without hooks, global/system
+   configuration, Git network access or a fabricated commit/HEAD. The original
+   complete candidate unit suite, ordinary check, navigation and site checks run
+   inside Oracle's isolated sandbox. Tests requiring an actual historical Git
+   HEAD fail visibly rather than receiving invented provenance. B's writable
+   phase JSON is diagnostic only; the actual trusted driver's exit composes its
+   required phases. B can never replace A's native authority or artifacts.
+
+Only upstream structural success, verified immutable A captures, successful B
+phases and the exact-head checks together yield `validate: success`. Native exit0,
+stdout PASS or a candidate-generated manifest alone is insufficient. Unsupported
+future producer/campaign contracts fail visibly; the generic queue and local
+adapter still route new TLA+ work to Oracle, but privileged CI authority changes
+require review.
+
+[Oracle TLA verification](../.github/workflows/oracle-tla.yml) preserves explicit
+manual dispatch of maintained main, with all structural/native/full-test phases
+on Oracle and no fabricated upstream success. Its former direct push trigger is
+removed because the workflow-run path already verifies main pushes once.
+
+Both control-plane workflows have read-only contents/actions permissions and
+checks-write only for result publication (PR dispatch also reads PR metadata).
+Checkout credentials are not persisted. Payloads have private bounded storage,
+loopback-only networking and no repository credentials. The repository runner's
+dedicated queue principal is authorized only for `sloik/post-ai-worlds`.
+
+## Baseline updates and first deployment
+
+Before enabling a new dispatcher/admission boundary, retain an independently
+reviewed exact-head native A and complete B proof for its initial reviewed
+baseline. The first transport PR cannot pretend that a not-yet-installed
+workflow has run: record this owner-authorized bootstrap explicitly, then prove
+real push/PR/fork-approval/manual routing after integration. A later producer or
+schema change follows the same reviewed baseline-update procedure; do not bless
+rehash-only receipts or auto-import candidate verifier code into the control
+plane. Parent-owned host installation/admission review is required before this
+workflow is activated.
 
 ## Admission before job steps
 
-The host installs [oracle_job_guard.py](../ci/oracle_job_guard.py) and [its hook](../ci/oracle-job-started.sh) root-owned outside the checkout. The service's `ACTIONS_RUNNER_HOOK_JOB_STARTED` points to that fixed hook. It accepts only this repository's name and numeric ID, GitHub.com, the exact Oracle workflow at `refs/heads/main`, and push/manual-dispatch events with a matching main ref. Fork, PR payload, deleted push, other workflow/ref, missing context and malformed or duplicate-key event JSON are rejected.
+The host installs [oracle_job_guard.py](../ci/oracle_job_guard.py) and [its hook](../ci/oracle-job-started.sh) root-owned outside the checkout. The service's `ACTIONS_RUNNER_HOOK_JOB_STARTED` points to that fixed hook. Its reviewed deployment must admit only this repository's name and numeric ID, GitHub.com, maintained-main workflow definitions, the exact approved workflow-run dispatcher/source context or explicit manual-main context. Direct PR/PR-target execution, arbitrary checkout refs, deleted/foreign identities, missing context and malformed or duplicate-key event JSON remain rejected. The old push/manual-only hook cannot activate the new dispatcher unchanged; retain before/after allow/deny evidence for the scoped extension.
 
 This is a gate before step execution. The Actions runner downloads/prepares actions before the hook; it is not a claim that no untrusted metadata is processed. On runner v2.338.2 the hook path comes from the service process and the hook handler receives trusted GitHub context rather than ordinary workflow environment overrides. The local adversarial tests establish the predicate; actual runner execution establishes installation compatibility. Neither proves all future runner versions preserve those implementation details.
 
@@ -24,6 +90,6 @@ After registration, the application, configuration, hook and unit are root-owned
 
 GitHub's 30-day update window is kept by the host: runner updates are applied by the host's verified updater (`swift-tla-runner-update.timer`, daily). GitHub's own auto-update stays disabled so the installation stays root-owned. The updater requires the release-notes SHA-256 and the asset digest to agree with the download, refuses a runner that no longer supports `ACTIONS_RUNNER_HOOK_JOB_STARTED`, never interrupts a running job, swaps only the runner code (registration, credentials, `.env`, hook and file modes are untouched), waits for the listener to reconnect, and restores the previous version on failure. After a real version change, run one real job before claiming compatibility. Tested on 2026-11-13 with a forced same-version swap followed by a green manual-dispatch run.
 
-Treat write access to maintained main and runner administration as trusted authority. Do not add Oracle PR execution, arbitrary checkout refs or privileged PR-target workflows. Changes to these boundaries need explicit review. The host registration is independent of whether a scientific hypothesis is true, probable or desirable.
+Treat write access to maintained main and runner administration as trusted authority. Do not execute PR code on the persistent runner, allow arbitrary checkout refs, or add privileged PR-target workflows. Candidate code is confined to the shared queue sandbox; source materialization and evidence verification stay in the reviewed control plane. Changes to these boundaries need explicit review. The host registration is independent of whether a scientific hypothesis is true, probable or desirable.
 
 [Formal assurance scope](../formal/README.md) · [Prediction standard](forecasting-guide.md)

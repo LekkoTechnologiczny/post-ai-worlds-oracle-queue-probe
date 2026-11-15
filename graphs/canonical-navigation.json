@@ -82,7 +82,7 @@
       "label": "Oracle-backed TLA verification",
       "url": "https://github.com/sloik/post-ai-worlds/blob/main/docs/oracle-runner.md",
       "kind": "document",
-      "sha256": "530cd2de2c9b8e32922ec7f58c61611192347a36fe84cf7e75ebb14d4c571920"
+      "sha256": "b43ec0d00d9dd183582640053ec075e7c808dc93b0e9f915471359d6fa7ca6b1"
     },
     {
       "id": "evidence/FORECAST-REVIEWS.md",
@@ -124,7 +124,7 @@
       "label": "Bounded formal assurance",
       "url": "https://github.com/sloik/post-ai-worlds/blob/main/formal/README.md",
       "kind": "document",
-      "sha256": "0301071c3ed64fd8744d245fa44328831a1e008e7ee30007aed15e641b810fc5"
+      "sha256": "2206cf8f6853b1eb93d42b2ea3b14a39cc161b78ca746fdb2895b9dc6bd1d219"
     },
     {
       "id": "omnicorp/00-CHARTER.md",
@@ -812,7 +812,7 @@
       "relation": "markdown_link",
       "source_file": "docs/oracle-runner.md",
       "source_lines": [
-        29
+        95
       ],
       "anchors": []
     },
@@ -822,7 +822,7 @@
       "relation": "markdown_link",
       "source_file": "docs/oracle-runner.md",
       "source_lines": [
-        29
+        95
       ],
       "anchors": []
     },
@@ -1014,7 +1014,7 @@
       "relation": "markdown_link",
       "source_file": "formal/README.md",
       "source_lines": [
-        35
+        56
       ],
       "anchors": []
     },
@@ -1024,7 +1024,7 @@
       "relation": "markdown_link",
       "source_file": "formal/README.md",
       "source_lines": [
-        39
+        69
       ],
       "anchors": []
     },
@@ -1034,7 +1034,7 @@
       "relation": "markdown_link",
       "source_file": "formal/README.md",
       "source_lines": [
-        39
+        66
       ],
       "anchors": []
     },
@@ -1044,7 +1044,7 @@
       "relation": "markdown_link",
       "source_file": "formal/README.md",
       "source_lines": [
-        35
+        56
       ],
       "anchors": []
     },
